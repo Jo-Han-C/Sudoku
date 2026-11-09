@@ -22,7 +22,10 @@ body {
   overscroll-behavior: none;
 }
 
+/* Skärmhöjden inklusive statusfält och navigationsfält; skärmarna fyller resten med flex. */
 #app {
+  display: flex;
+  flex-direction: column;
   min-height: 100dvh;
   padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
 }
