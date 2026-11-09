@@ -1,7 +1,7 @@
 import { boxOf, colOf, rowOf } from '../engine/board';
 import { hasNote, isGiven, isWrong } from '../game/selectors';
 import type { GameState } from '../game/types';
-import { dispatch, settings } from '../state/store';
+import { dispatch, flash, settings } from '../state/store';
 
 const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
 
@@ -11,6 +11,13 @@ export function Board({ game: g }: { game: GameState }) {
   const selValue = sel !== null && !isWrong(g, sel) ? g.values[sel]! : 0;
   const revealed = new Set(g.revealed ?? []);
   const autoOrder = new Map((g.autoFilled ?? []).map((cell, k) => [cell, k]));
+  const f = flash.value;
+  const flashing = new Set(f?.cells ?? []);
+  // Vågen sprider sig från cellen där siffran placerades.
+  const flashDelay = (i: number) =>
+    f
+      ? Math.max(Math.abs(rowOf(i) - rowOf(f.origin)), Math.abs(colOf(i) - colOf(f.origin))) * 45
+      : 0;
 
   return (
     <div class="board" role="grid" aria-label="Sudokubräde">
@@ -33,6 +40,7 @@ export function Board({ game: g }: { game: GameState }) {
                   : 'user'
                 : 'empty',
           autoOrder.has(i) && 'auto',
+          flashing.has(i) && 'flash',
           i === sel && 'selected',
           same && 'same',
           peer && 'peer',
@@ -43,13 +51,19 @@ export function Board({ game: g }: { game: GameState }) {
           .join(' ');
         return (
           <button
-            key={i}
+            key={flashing.has(i) ? `${i}-${f!.id}` : i}
             type="button"
             role="gridcell"
             class={cls}
             aria-label={`Rad ${rowOf(i) + 1}, kolumn ${colOf(i) + 1}${value ? `, ${value}` : ', tom'}`}
             aria-selected={i === sel}
-            style={autoOrder.has(i) ? { animationDelay: `${autoOrder.get(i)! * 70}ms` } : undefined}
+            style={
+              autoOrder.has(i)
+                ? { animationDelay: `${autoOrder.get(i)! * 70}ms` }
+                : flashing.has(i)
+                  ? { animationDelay: `${flashDelay(i)}ms` }
+                  : undefined
+            }
             onPointerDown={(e) => {
               e.preventDefault();
               dispatch({ type: 'select', cell: i });

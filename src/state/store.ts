@@ -1,7 +1,7 @@
 import { computed, effect, signal } from '@preact/signals';
 import type { Difficulty } from '../engine/difficulty';
 import { createGame, reduce, restartGame, type Action } from '../game/reducer';
-import { canAutoComplete } from '../game/selectors';
+import { canAutoComplete, completedUnitCells, isLocked } from '../game/selectors';
 import type { Settings } from '../game/settings';
 import type { GameState } from '../game/types';
 import { newPuzzle, pushRecent } from '../puzzles/bank';
@@ -32,6 +32,24 @@ export const now = signal(Date.now());
 export const loading = signal(false);
 /** Sant om senaste vinsten gav nytt rekord. */
 export const lastWinWasRecord = signal(false);
+
+/** Celler som lyser upp kort när en rad, kolumn, box eller hela brädet blir klart. */
+export interface Flash {
+  id: number;
+  cells: number[];
+  /** Cellen som vågen utgår från. */
+  origin: number;
+}
+export const flash = signal<Flash | null>(null);
+let flashId = 0;
+let flashTimer: number | undefined;
+
+function startFlash(cells: number[], origin: number): void {
+  if (cells.length === 0) return;
+  flash.value = { id: ++flashId, cells, origin };
+  window.clearTimeout(flashTimer);
+  flashTimer = window.setTimeout(() => (flash.value = null), 1400);
+}
 
 /** Ett spel som går att fortsätta. */
 export const resumableGame = computed(() => {
@@ -109,6 +127,16 @@ export function dispatch(action: ActionWithoutTime): void {
   game.value = next;
   now.value = t;
   persistGame(next);
+
+  if (full.type === 'input' && next.selected !== null && next.values !== g.values) {
+    const cell = next.selected;
+    if (next.status === 'won')
+      startFlash(
+        Array.from({ length: 81 }, (_, i) => i),
+        cell,
+      );
+    else if (isLocked(next, cell)) startFlash(completedUnitCells(next, cell), cell);
+  }
   maybeAutoComplete();
 }
 
@@ -221,4 +249,36 @@ effect(() => {
   if (screen.value !== 'game' || game.value?.status !== 'playing') return;
   const id = window.setInterval(() => (now.value = Date.now()), 1000);
   return () => window.clearInterval(id);
+});
+
+// ---- Håll skärmen tänd medan man spelar --------------------------------------
+
+interface WakeLockHandle {
+  release(): Promise<void>;
+}
+let wakeLock: WakeLockHandle | null = null;
+const pageVisible = signal(document.visibilityState === 'visible');
+document.addEventListener('visibilitychange', () => {
+  pageVisible.value = document.visibilityState === 'visible';
+});
+
+effect(() => {
+  const wanted =
+    settings.value.keepScreenOn &&
+    pageVisible.value &&
+    screen.value === 'game' &&
+    game.value?.status === 'playing';
+  const api = (
+    navigator as Navigator & { wakeLock?: { request(type: 'screen'): Promise<WakeLockHandle> } }
+  ).wakeLock;
+  if (!api) return;
+  if (wanted && !wakeLock) {
+    api
+      .request('screen')
+      .then((lock) => (wakeLock = lock))
+      .catch(() => undefined);
+  } else if (!wanted && wakeLock) {
+    void wakeLock.release().catch(() => undefined);
+    wakeLock = null;
+  }
 });

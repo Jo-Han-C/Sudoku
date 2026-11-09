@@ -34,6 +34,11 @@ const ROWS: { key: BoolKey; label: string; desc: string }[] = [
   },
   { key: 'showTimer', label: 'Visa timer', desc: 'Tiden räknas ändå för statistiken' },
   { key: 'haptics', label: 'Vibrera vid misstag', desc: 'Om telefonen stöder det' },
+  {
+    key: 'keepScreenOn',
+    label: 'Håll skärmen tänd',
+    desc: 'Skärmen släcks inte medan du spelar',
+  },
 ];
 
 export function SettingsScreen() {
