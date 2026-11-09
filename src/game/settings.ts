@@ -15,7 +15,7 @@ export interface Settings {
   showTimer: boolean;
   /** Vibrera vid misstag. */
   haptics: boolean;
-  /** Fyll i resten automatiskt när pusslet nästan är klart (blixtknappen). */
+  /** Fyll i resten automatiskt när pusslet nästan är klart. */
   autoComplete: boolean;
   lastDifficulty: Difficulty;
 }

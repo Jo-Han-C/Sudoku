@@ -62,12 +62,6 @@ export const GearIcon = (p: P) => (
   </svg>
 );
 
-export const BoltIcon = (p: P) => (
-  <svg {...base} {...p}>
-    <path d="M13 2.5L5 13.5h6l-1 8 8-11h-6z" fill="currentColor" stroke="none" />
-  </svg>
-);
-
 export const ChartIcon = (p: P) => (
   <svg {...base} {...p}>
     <path d="M4 20h16" />

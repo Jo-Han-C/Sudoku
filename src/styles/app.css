@@ -548,13 +548,6 @@
   }
 }
 
-.auto-row {
-  display: flex;
-  justify-content: flex-end;
-  width: var(--board);
-  margin-top: 10px;
-}
-
 .switch {
   position: relative;
   flex: none;
@@ -587,10 +580,6 @@
   transform: translateX(22px);
   background: var(--accent-text);
   color: var(--accent);
-}
-
-.auto-row + .actions {
-  margin-top: 16px;
 }
 
 .end-card {

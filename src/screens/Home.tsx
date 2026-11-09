@@ -57,9 +57,6 @@ export function HomeScreen() {
         >
           Nytt spel
         </button>
-        <button type="button" class="btn big ghost" onClick={() => navigate('stats')}>
-          Statistik
-        </button>
       </div>
 
       {picking && <NewGameFlow onClose={() => setPicking(false)} />}

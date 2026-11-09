@@ -49,7 +49,7 @@ export function formatTime(ms: number): string {
 
 /**
  * Sant när varje tom cell bara har en möjlig siffra och inga fel siffror finns på brädet.
- * Då kan resten fyllas i automatiskt (blixtknappen).
+ * Då kan resten fyllas i automatiskt (inställningen Autokomplettering).
  */
 export function canAutoComplete(g: GameState): boolean {
   if (g.status !== 'playing') return false;

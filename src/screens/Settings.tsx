@@ -14,7 +14,7 @@ const ROWS: { key: BoolKey; label: string; desc: string }[] = [
   {
     key: 'autoComplete',
     label: 'Autokomplettering',
-    desc: 'Fyll i resten när varje tom cell bara har en möjlig siffra (blixten)',
+    desc: 'Fyll i resten när varje tom cell bara har en möjlig siffra',
   },
   {
     key: 'autoRemoveNotes',

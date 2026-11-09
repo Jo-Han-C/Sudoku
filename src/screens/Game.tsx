@@ -1,13 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import { Board } from '../components/Board';
 import { Dialog } from '../components/Dialog';
-import {
-  ActionBar,
-  AutoCompleteSwitch,
-  InfoRow,
-  NumberPad,
-  TopBar,
-} from '../components/GameControls';
+import { ActionBar, InfoRow, NumberPad, TopBar } from '../components/GameControls';
 import { PlayIcon } from '../components/icons';
 import { DIFFICULTY_LABEL } from '../engine/difficulty';
 import { formatTime } from '../game/selectors';
@@ -163,7 +157,6 @@ export function GameScreen() {
         <Board game={g} />
         {g.status === 'paused' && <PauseOverlay />}
       </div>
-      <AutoCompleteSwitch />
       <ActionBar game={g} />
       <NumberPad game={g} />
       {ended && <EndDialog key={`${g.id}-${g.status}`} game={g} />}
