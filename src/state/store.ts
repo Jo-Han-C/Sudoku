@@ -1,10 +1,11 @@
 import { computed, effect, signal } from '@preact/signals';
 import type { Difficulty } from '../engine/difficulty';
 import { createGame, reduce, restartGame, type Action } from '../game/reducer';
+import { canAutoComplete } from '../game/selectors';
 import type { Settings } from '../game/settings';
 import type { GameState } from '../game/types';
 import { newPuzzle, pushRecent } from '../puzzles/bank';
-import { recordLoss, recordStart, recordWin, type Stats } from '../stats/stats';
+import { emptyStats, recordLoss, recordStart, recordWin, type Stats } from '../stats/stats';
 import {
   browserStore,
   clearGame,
@@ -20,7 +21,7 @@ import {
 
 const kv = browserStore();
 
-export type Screen = 'home' | 'game';
+export type Screen = 'home' | 'game' | 'stats' | 'settings';
 
 export const screen = signal<Screen>('home');
 export const settings = signal<Settings>(loadSettings(kv));
@@ -51,20 +52,31 @@ function setStats(s: Stats): void {
   saveStats(kv, s);
 }
 
+export function resetStats(): void {
+  setStats(emptyStats());
+}
+
 export function updateSettings(patch: Partial<Settings>): void {
   settings.value = { ...settings.value, ...patch };
   saveSettings(kv, settings.value);
+  if (patch.autoComplete) maybeAutoComplete();
 }
 
 function vibrate(ms: number): void {
-  if (settings.value.haptics && 'vibrate' in navigator) navigator.vibrate(ms);
+  try {
+    if (settings.value.haptics && 'vibrate' in navigator) navigator.vibrate(ms);
+  } catch {
+    // Vibration stöds inte.
+  }
 }
 
 type ActionWithoutTime =
   | Exclude<Action, { now: number }>
   | { type: 'input'; digit: number }
   | { type: 'pause' }
-  | { type: 'resume' };
+  | { type: 'resume' }
+  | { type: 'giveUp' }
+  | { type: 'autoComplete' };
 
 export function dispatch(action: ActionWithoutTime): void {
   const g = game.value;
@@ -82,12 +94,22 @@ export function dispatch(action: ActionWithoutTime): void {
     lastWinWasRecord.value = best !== null && next.elapsedMs < best;
     s = recordWin(s, next.difficulty, next.elapsedMs, next.mistakes);
   }
-  if (g.status !== 'lost' && next.status === 'lost') s = recordLoss(s, next.difficulty, false);
+  // Ett spel utan drag räknas inte i statistiken, inte heller när man ger upp det.
+  if (g.status !== 'lost' && next.status === 'lost' && next.countedAsStarted) {
+    s = recordLoss(s, next.difficulty, next.givenUp === true);
+  }
   if (s !== stats.value) setStats(s);
 
   game.value = next;
   now.value = t;
   persistGame(next);
+  maybeAutoComplete();
+}
+
+/** Blixtknappen: fyll i resten när varje tom cell bara har en möjlig siffra. */
+function maybeAutoComplete(): void {
+  const g = game.value;
+  if (g && settings.value.autoComplete && canAutoComplete(g)) dispatch({ type: 'autoComplete' });
 }
 
 /** Avslutar ett pågående spel; har det startats räknas det som uppgivet. */
@@ -108,7 +130,7 @@ export async function startNewGame(difficulty: Difficulty): Promise<void> {
     const g = createGame(p, Date.now());
     game.value = g;
     persistGame(g);
-    showGame();
+    navigate('game');
   } finally {
     loading.value = false;
   }
@@ -121,36 +143,60 @@ export function retrySamePuzzle(): void {
   const next = restartGame(g, Date.now());
   game.value = next;
   persistGame(next);
-  showGame();
+  navigate('game');
 }
 
 export function continueGame(): void {
   if (!resumableGame.value) return;
-  showGame();
+  navigate('game');
   dispatch({ type: 'resume' });
 }
 
 // ---- Navigering och Androids bakåtgest -----------------------------------
+//
+// Varje skärm utom startskärmen är ett steg i webbläsarens historik, så att
+// bakåtgesten fungerar. Att lämna spelskärmen pausar spelet.
 
-function showGame(): void {
-  if (screen.value !== 'game') {
-    screen.value = 'game';
-    history.pushState({ screen: 'game' }, '');
-  }
-}
+/** Sant om spelet pausades för att inställningarna öppnades, så att det kan fortsätta efteråt. */
+let pausedForSettings = false;
 
-/** Pausar och går till startskärmen. */
-export function leaveGame(): void {
-  dispatch({ type: 'pause' });
-  if (history.state?.screen === 'game') history.back();
-  else screen.value = 'home';
-}
-
-window.addEventListener('popstate', () => {
-  if (screen.value === 'game') {
+function setScreen(next: Screen): void {
+  const prev = screen.value;
+  if (prev === next) return;
+  if (prev === 'game') {
+    pausedForSettings = next === 'settings' && game.value?.status === 'playing';
     dispatch({ type: 'pause' });
-    screen.value = 'home';
   }
+  if (next === 'game' && pausedForSettings) {
+    pausedForSettings = false;
+    dispatch({ type: 'resume' });
+  }
+  screen.value = next;
+}
+
+export function navigate(next: Screen): void {
+  if (screen.value === next) return;
+  if (next === 'home') {
+    goBack();
+    return;
+  }
+  history.pushState({ screen: next }, '');
+  setScreen(next);
+}
+
+/** Tillbaka ett steg, som bakåtgesten. */
+export function goBack(): void {
+  if (history.state?.screen && history.state.screen !== 'home') history.back();
+  else setScreen('home');
+}
+
+// Startskärmen är alltid första steget, även efter en omladdning.
+history.replaceState({ screen: 'home' }, '');
+
+window.addEventListener('popstate', (e) => {
+  const target = (e.state as { screen?: Screen } | null)?.screen ?? 'home';
+  if (target === 'game' && !game.value) setScreen('home');
+  else setScreen(target);
 });
 
 // ---- Paus när appen göms, och sparning när den stängs ---------------------

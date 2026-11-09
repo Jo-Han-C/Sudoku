@@ -1,6 +1,6 @@
 import { PEERS, bit, colOf, rowOf } from '../engine/board';
 import type { NewPuzzle } from '../puzzles/bank';
-import { elapsedAt, isComplete, isGiven, isLocked, solutionAt } from './selectors';
+import { canAutoComplete, elapsedAt, isComplete, isGiven, isLocked, solutionAt } from './selectors';
 import { MAX_MISTAKES, type CellState, type GameState, type Move } from './types';
 
 export interface RuleOptions {
@@ -16,7 +16,9 @@ export type Action =
   | { type: 'undo' }
   | { type: 'togglePencil' }
   | { type: 'pause'; now: number }
-  | { type: 'resume'; now: number };
+  | { type: 'resume'; now: number }
+  | { type: 'giveUp'; now: number }
+  | { type: 'autoComplete'; now: number };
 
 const newId = (): string =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -141,6 +143,37 @@ function moveSelection(g: GameState, dir: 'up' | 'down' | 'left' | 'right'): Gam
   return { ...g, selected: r * 9 + c };
 }
 
+/** Ge upp: spelet räknas som förlorat och lösningen visas. */
+function giveUp(g: GameState, now: number): GameState {
+  const revealed: number[] = [];
+  const values = g.values.map((v, i) => {
+    const s = solutionAt(g, i);
+    if (v !== s) revealed.push(i);
+    return s;
+  });
+  return {
+    ...endGame(g, 'lost', now),
+    values,
+    notes: new Array<number>(81).fill(0),
+    givenUp: true,
+    revealed,
+    selected: null,
+  };
+}
+
+/** Fyller i alla tomma celler när var och en bara har en möjlig siffra. */
+function autoComplete(g: GameState, now: number): GameState {
+  if (!canAutoComplete(g)) return g;
+  const autoFilled: number[] = [];
+  const values = g.values.map((v, i) => {
+    if (v) return v;
+    autoFilled.push(i);
+    return solutionAt(g, i);
+  });
+  const notes = g.notes.map((n, i) => (autoFilled.includes(i) ? 0 : n));
+  return { ...endGame({ ...g, values, notes }, 'won', now), autoFilled, selected: null };
+}
+
 /** Ren funktion: returnerar samma objekt om åtgärden inte ändrar något. */
 export function reduce(g: GameState, action: Action, opts: RuleOptions): GameState {
   switch (action.type) {
@@ -150,6 +183,9 @@ export function reduce(g: GameState, action: Action, opts: RuleOptions): GameSta
     case 'resume':
       if (g.status !== 'paused') return g;
       return { ...g, status: 'playing', runningSince: action.now };
+    case 'giveUp':
+      if (g.status !== 'playing' && g.status !== 'paused') return g;
+      return giveUp(g, action.now);
   }
   if (g.status !== 'playing') return g;
   switch (action.type) {
@@ -165,5 +201,7 @@ export function reduce(g: GameState, action: Action, opts: RuleOptions): GameSta
       return erase(g);
     case 'undo':
       return undo(g);
+    case 'autoComplete':
+      return autoComplete(g, action.now);
   }
 }

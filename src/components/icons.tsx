@@ -54,3 +54,23 @@ export const PencilIcon = (p: P) => (
     <path d="M14.5 6l3.5 3.5" />
   </svg>
 );
+
+export const GearIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M12 2.8l7.8 4.6v9.2L12 21.2l-7.8-4.6V7.4z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+export const BoltIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M13 2.5L5 13.5h6l-1 8 8-11h-6z" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+export const ChartIcon = (p: P) => (
+  <svg {...base} {...p}>
+    <path d="M4 20h16" />
+    <path d="M7 16v-5M12 16V6M17 16v-8" />
+  </svg>
+);
