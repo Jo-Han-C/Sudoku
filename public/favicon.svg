@@ -1,9 +1,16 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="12" fill="#17181c"/>
-  <g stroke="#3a3f4b" stroke-width="2">
-    <path d="M24 10v44M40 10v44M10 24h44M10 40h44"/>
-  </g>
-  <rect x="10" y="10" width="44" height="44" fill="none" stroke="#8a90a0" stroke-width="3" rx="2"/>
-  <text x="32" y="41" font-family="system-ui, sans-serif" font-size="22" font-weight="600"
-        text-anchor="middle" fill="#6ea0ff">9</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="92.16" fill="#16171b"/>
+  <rect x="189.44" y="189.44" width="133.12" height="133.12" fill="#2f5aa3"/>
+  <path d="M189.44 56.31999999999999V455.68M56.31999999999999 189.44H455.68" stroke="#3a3e49" stroke-width="6.144"/><path d="M322.56 56.31999999999999V455.68M56.31999999999999 322.56H455.68" stroke="#3a3e49" stroke-width="6.144"/>
+  <rect x="56.31999999999999" y="56.31999999999999" width="399.36" height="399.36" rx="10.24" fill="none" stroke="#8a909e" stroke-width="14.336"/>
+  <text x="122.88" y="122.88" dy="0.35em" text-anchor="middle"
+      font-family="Inter, Roboto, 'Segoe UI', Arial, sans-serif" font-size="82.5344" font-weight="500" fill="#d9d9dc">5</text>
+  <text x="389.12" y="122.88" dy="0.35em" text-anchor="middle"
+      font-family="Inter, Roboto, 'Segoe UI', Arial, sans-serif" font-size="82.5344" font-weight="500" fill="#6ea0ff">3</text>
+  <text x="256" y="256" dy="0.35em" text-anchor="middle"
+      font-family="Inter, Roboto, 'Segoe UI', Arial, sans-serif" font-size="82.5344" font-weight="600" fill="#ffffff">9</text>
+  <text x="122.88" y="389.12" dy="0.35em" text-anchor="middle"
+      font-family="Inter, Roboto, 'Segoe UI', Arial, sans-serif" font-size="82.5344" font-weight="500" fill="#6ea0ff">7</text>
+  <text x="389.12" y="389.12" dy="0.35em" text-anchor="middle"
+      font-family="Inter, Roboto, 'Segoe UI', Arial, sans-serif" font-size="82.5344" font-weight="500" fill="#d9d9dc">1</text>
 </svg>
