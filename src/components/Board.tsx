@@ -9,6 +9,8 @@ export function Board({ game: g }: { game: GameState }) {
   const { highlightPeers, highlightSameDigit } = settings.value;
   const sel = g.selected;
   const selValue = sel !== null && !isWrong(g, sel) ? g.values[sel]! : 0;
+  const revealed = new Set(g.revealed ?? []);
+  const autoOrder = new Map((g.autoFilled ?? []).map((cell, k) => [cell, k]));
 
   return (
     <div class="board" role="grid" aria-label="Sudokubräde">
@@ -21,7 +23,16 @@ export function Board({ game: g }: { game: GameState }) {
         const same = highlightSameDigit && selValue !== 0 && value === selValue;
         const cls = [
           'cell',
-          isGiven(g, i) ? 'given' : value ? (isWrong(g, i) ? 'wrong' : 'user') : 'empty',
+          isGiven(g, i)
+            ? 'given'
+            : revealed.has(i)
+              ? 'revealed'
+              : value
+                ? isWrong(g, i)
+                  ? 'wrong'
+                  : 'user'
+                : 'empty',
+          autoOrder.has(i) && 'auto',
           i === sel && 'selected',
           same && 'same',
           peer && 'peer',
@@ -38,6 +49,7 @@ export function Board({ game: g }: { game: GameState }) {
             class={cls}
             aria-label={`Rad ${rowOf(i) + 1}, kolumn ${colOf(i) + 1}${value ? `, ${value}` : ', tom'}`}
             aria-selected={i === sel}
+            style={autoOrder.has(i) ? { animationDelay: `${autoOrder.get(i)! * 70}ms` } : undefined}
             onPointerDown={(e) => {
               e.preventDefault();
               dispatch({ type: 'select', cell: i });

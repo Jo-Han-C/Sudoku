@@ -1,19 +1,37 @@
 import { DIFFICULTY_LABEL } from '../engine/difficulty';
 import { elapsedAt, formatTime, progress, remainingDigits } from '../game/selectors';
 import { MAX_MISTAKES, type GameState } from '../game/types';
-import { dispatch, leaveGame, now, settings, stats } from '../state/store';
-import { BackIcon, EraseIcon, PauseIcon, PencilIcon, PlayIcon, UndoIcon } from './icons';
+import { dispatch, goBack, navigate, now, settings, stats, updateSettings } from '../state/store';
+import { Switch } from './Switch';
+import {
+  BackIcon,
+  BoltIcon,
+  EraseIcon,
+  GearIcon,
+  PauseIcon,
+  PencilIcon,
+  PlayIcon,
+  UndoIcon,
+} from './icons';
 
 export function TopBar({ game: g }: { game: GameState }) {
   const streak = stats.value.byDifficulty[g.difficulty].currentStreak;
   return (
     <header class="topbar">
-      <button type="button" class="icon-btn" aria-label="Tillbaka" onClick={leaveGame}>
+      <button type="button" class="icon-btn" aria-label="Tillbaka" onClick={goBack}>
         <BackIcon width={28} height={28} />
       </button>
       <h1 class="topbar-title">
         Vinstrad <span class="accent">{streak}</span>
       </h1>
+      <button
+        type="button"
+        class="icon-btn topbar-end"
+        aria-label="Inställningar"
+        onClick={() => navigate('settings')}
+      >
+        <GearIcon width={28} height={28} />
+      </button>
     </header>
   );
 }
@@ -119,6 +137,22 @@ export function NumberPad({ game: g }: { game: GameState }) {
           </button>
         );
       })}
+    </div>
+  );
+}
+
+/** Blixtknappen: autokomplettering när pusslet nästan är klart. */
+export function AutoCompleteSwitch() {
+  return (
+    <div class="auto-row">
+      <Switch
+        class="bolt"
+        label="Autokomplettering"
+        checked={settings.value.autoComplete}
+        onChange={(autoComplete) => updateSettings({ autoComplete })}
+      >
+        <BoltIcon width={14} height={14} />
+      </Switch>
     </div>
   );
 }

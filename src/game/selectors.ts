@@ -1,4 +1,4 @@
-import { bit } from '../engine/board';
+import { ALL_DIGITS, PEERS, bit, popcount } from '../engine/board';
 import type { GameState } from './types';
 
 export const solutionAt = (g: GameState, i: number): number => g.solution.charCodeAt(i) - 48;
@@ -45,4 +45,22 @@ export function formatTime(ms: number): string {
   const s = total % 60;
   const pad = (n: number) => String(n).padStart(2, '0');
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+}
+
+/**
+ * Sant när varje tom cell bara har en möjlig siffra och inga fel siffror finns på brädet.
+ * Då kan resten fyllas i automatiskt (blixtknappen).
+ */
+export function canAutoComplete(g: GameState): boolean {
+  if (g.status !== 'playing') return false;
+  let empty = 0;
+  for (let i = 0; i < 81; i++) {
+    if (isWrong(g, i)) return false;
+    if (g.values[i] !== 0) continue;
+    empty++;
+    let used = 0;
+    for (const p of PEERS[i]!) if (g.values[p]) used |= bit(g.values[p]!);
+    if (popcount(ALL_DIGITS & ~used) !== 1) return false;
+  }
+  return empty > 0;
 }

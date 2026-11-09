@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { bit } from '../engine/board';
 import { createGame, reduce, restartGame, type Action, type RuleOptions } from './reducer';
-import { elapsedAt, progress, remainingDigits, solutionAt } from './selectors';
+import { canAutoComplete, elapsedAt, progress, remainingDigits, solutionAt } from './selectors';
 import { nearlySolved, testPuzzle } from './testing';
 import type { GameState } from './types';
 
@@ -176,5 +176,50 @@ describe('reducer', () => {
     const remaining = remainingDigits(g);
     const givenCount = (d: number) => [...g.givens].filter((ch) => ch === String(d)).length;
     for (let d = 1; d <= 9; d++) expect(remaining[d]).toBe(9 - givenCount(d));
+  });
+});
+
+describe('ge upp', () => {
+  it('avslutar som förlust, visar lösningen och markerar avslöjade celler', () => {
+    let g = run(game(), { type: 'select', cell: EMPTY }, { type: 'input', digit: 4, now: 0 });
+    g = run(g, { type: 'pause', now: 5000 }, { type: 'giveUp', now: 9000 });
+    expect(g.status).toBe('lost');
+    expect(g.givenUp).toBe(true);
+    expect(g.values.join('')).toBe(g.solution);
+    expect(g.revealed).not.toContain(EMPTY);
+    expect(g.revealed).toHaveLength(81 - 32 - 1);
+    expect(g.elapsedMs).toBe(4000);
+  });
+
+  it('går inte att ge upp ett avslutat spel', () => {
+    let g = createGame(nearlySolved([0]), 0);
+    g = run(g, { type: 'select', cell: 0 }, { type: 'input', digit: solutionAt(g, 0), now: 1 });
+    expect(run(g, { type: 'giveUp', now: 2 })).toBe(g);
+  });
+});
+
+describe('autokomplettering', () => {
+  it('kan köras när varje tom cell bara har en möjlig siffra', () => {
+    const g = createGame(nearlySolved([0, 10, 40, 80]), 0);
+    expect(canAutoComplete(g)).toBe(true);
+    const done = run(g, { type: 'autoComplete', now: 30_000 });
+    expect(done.status).toBe('won');
+    expect(done.autoFilled).toEqual([0, 10, 40, 80]);
+    expect(done.elapsedMs).toBe(30_000);
+  });
+
+  it('körs inte tidigt i spelet eller när en fel siffra finns', () => {
+    expect(canAutoComplete(game())).toBe(false);
+    expect(run(game(), { type: 'autoComplete', now: 1 }).status).toBe('playing');
+
+    let g = createGame(nearlySolved([0, 40]), 0);
+    g = run(g, { type: 'select', cell: 0 }, { type: 'input', digit: wrongDigit(g, 0), now: 1 });
+    expect(canAutoComplete(g)).toBe(false);
+  });
+
+  it('körs inte när två tomma celler i samma enhet kan byta siffror', () => {
+    // Hela rad 0 tom: varje cell har nio möjliga siffror i raden men begränsas av kolumn och box.
+    const g = createGame(nearlySolved([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]), 0);
+    expect(canAutoComplete(g)).toBe(false);
   });
 });

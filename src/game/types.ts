@@ -42,6 +42,12 @@ export interface GameState {
   pencil: boolean;
   createdAt: number;
   endedAt?: number;
+  /** Sant om spelet avslutades med "Ge upp". */
+  givenUp?: boolean;
+  /** Celler som fylldes i med lösningen när spelaren gav upp. */
+  revealed?: number[];
+  /** Celler som fylldes i av autokompletteringen, i ordning. */
+  autoFilled?: number[];
 }
 
 export const MAX_MISTAKES = 3;

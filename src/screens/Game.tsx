@@ -1,7 +1,13 @@
-import { useEffect } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import { Board } from '../components/Board';
 import { Dialog } from '../components/Dialog';
-import { ActionBar, InfoRow, NumberPad, TopBar } from '../components/GameControls';
+import {
+  ActionBar,
+  AutoCompleteSwitch,
+  InfoRow,
+  NumberPad,
+  TopBar,
+} from '../components/GameControls';
 import { PlayIcon } from '../components/icons';
 import { DIFFICULTY_LABEL } from '../engine/difficulty';
 import { formatTime } from '../game/selectors';
@@ -9,8 +15,8 @@ import type { GameState } from '../game/types';
 import {
   dispatch,
   game,
+  goBack,
   lastWinWasRecord,
-  leaveGame,
   retrySamePuzzle,
   startNewGame,
   stats,
@@ -41,16 +47,27 @@ function onKey(e: KeyboardEvent): void {
 }
 
 function EndDialog({ game: g }: { game: GameState }) {
+  // Vid autokomplettering visas dialogen först när siffrorna har fyllts i.
+  const delay = g.autoFilled ? g.autoFilled.length * 70 + 600 : 0;
+  const [visible, setVisible] = useState(delay === 0);
+  useEffect(() => {
+    if (delay === 0) return;
+    const id = window.setTimeout(() => setVisible(true), delay);
+    return () => window.clearTimeout(id);
+  }, [delay]);
+  if (!visible) return null;
+
+  const newGame = {
+    label: 'Nytt spel',
+    primary: true,
+    onClick: () => void startNewGame(g.difficulty),
+  };
+  const home = { label: 'Till start', onClick: goBack };
+
   if (g.status === 'won') {
     const s = stats.value.byDifficulty[g.difficulty];
     return (
-      <Dialog
-        title="Snyggt löst!"
-        buttons={[
-          { label: 'Till start', onClick: leaveGame },
-          { label: 'Nytt spel', primary: true, onClick: () => void startNewGame(g.difficulty) },
-        ]}
-      >
+      <Dialog title="Snyggt löst!" buttons={[home, newGame]}>
         <dl class="result">
           <dt>Nivå</dt>
           <dd>{DIFFICULTY_LABEL[g.difficulty]}</dd>
@@ -67,21 +84,65 @@ function EndDialog({ game: g }: { game: GameState }) {
       </Dialog>
     );
   }
+  if (g.status === 'lost' && g.givenUp) {
+    // Ett kort längst ned, så att lösningen på brädet syns.
+    return (
+      <div class="end-card" role="status">
+        <p>Du gav upp. Lösningen visas, och siffrorna du inte hann fylla i är gråa.</p>
+        <div class="dialog-buttons">
+          <button type="button" class="btn" onClick={home.onClick}>
+            {home.label}
+          </button>
+          <button type="button" class="btn primary" onClick={newGame.onClick}>
+            {newGame.label}
+          </button>
+        </div>
+      </div>
+    );
+  }
   if (g.status === 'lost') {
     return (
       <Dialog
         title="Tre misstag"
-        buttons={[
-          { label: 'Till start', onClick: leaveGame },
-          { label: 'Försök igen', onClick: retrySamePuzzle },
-          { label: 'Nytt spel', primary: true, onClick: () => void startNewGame(g.difficulty) },
-        ]}
+        buttons={[home, { label: 'Försök igen', onClick: retrySamePuzzle }, newGame]}
       >
         Spelet är slut. Försök igen med samma pussel eller börja på ett nytt.
       </Dialog>
     );
   }
   return null;
+}
+
+function PauseOverlay() {
+  const [confirming, setConfirming] = useState(false);
+  return (
+    <div class="pause-overlay">
+      <p>Pausad</p>
+      <button
+        type="button"
+        class="play-big"
+        aria-label="Fortsätt"
+        onClick={() => dispatch({ type: 'resume' })}
+      >
+        <PlayIcon width={40} height={40} />
+      </button>
+      <button type="button" class="btn ghost" onClick={() => setConfirming(true)}>
+        Ge upp
+      </button>
+      {confirming && (
+        <Dialog
+          title="Ge upp spelet?"
+          onClose={() => setConfirming(false)}
+          buttons={[
+            { label: 'Avbryt', onClick: () => setConfirming(false) },
+            { label: 'Ge upp', primary: true, onClick: () => dispatch({ type: 'giveUp' }) },
+          ]}
+        >
+          Spelet räknas som förlorat och vinstraden nollställs. Lösningen visas efteråt.
+        </Dialog>
+      )}
+    </div>
+  );
 }
 
 export function GameScreen() {
@@ -92,7 +153,7 @@ export function GameScreen() {
 
   const g = game.value;
   if (!g) return null;
-  const paused = g.status === 'paused';
+  const ended = g.status === 'won' || g.status === 'lost';
 
   return (
     <div class="game">
@@ -100,23 +161,12 @@ export function GameScreen() {
       <InfoRow game={g} />
       <div class="board-wrap">
         <Board game={g} />
-        {paused && (
-          <div class="pause-overlay">
-            <p>Pausad</p>
-            <button
-              type="button"
-              class="play-big"
-              aria-label="Fortsätt"
-              onClick={() => dispatch({ type: 'resume' })}
-            >
-              <PlayIcon width={40} height={40} />
-            </button>
-          </div>
-        )}
+        {g.status === 'paused' && <PauseOverlay />}
       </div>
+      <AutoCompleteSwitch />
       <ActionBar game={g} />
       <NumberPad game={g} />
-      <EndDialog game={g} />
+      {ended && <EndDialog key={`${g.id}-${g.status}`} game={g} />}
     </div>
   );
 }
