@@ -1,7 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import { bit } from '../engine/board';
 import { createGame, reduce, restartGame, type Action, type RuleOptions } from './reducer';
-import { canAutoComplete, elapsedAt, progress, remainingDigits, solutionAt } from './selectors';
+import {
+  canAutoComplete,
+  completedUnitCells,
+  elapsedAt,
+  progress,
+  remainingDigits,
+  solutionAt,
+} from './selectors';
 import { nearlySolved, testPuzzle } from './testing';
 import type { GameState } from './types';
 
@@ -221,5 +228,27 @@ describe('autokomplettering', () => {
     // Hela rad 0 tom: varje cell har nio möjliga siffror i raden men begränsas av kolumn och box.
     const g = createGame(nearlySolved([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]), 0);
     expect(canAutoComplete(g)).toBe(false);
+  });
+});
+
+describe('klara enheter', () => {
+  it('hittar rad, kolumn och box som blev klara av en siffra', () => {
+    // Bara cell 0 tom: när den fylls blir rad 0, kolumn 0 och box 0 klara.
+    let g = createGame(nearlySolved([0, 80]), 0);
+    g = run(g, { type: 'select', cell: 0 }, { type: 'input', digit: solutionAt(g, 0), now: 1 });
+    const cells = completedUnitCells(g, 0);
+    expect(cells).toContain(8); // rad 0
+    expect(cells).toContain(72); // kolumn 0
+    expect(cells).toContain(20); // box 0
+    expect(cells).toHaveLength(9 + 8 + 8 - 4);
+  });
+
+  it('ger inget när enheten fortfarande har tomma celler', () => {
+    let g = createGame(nearlySolved([0, 1]), 0);
+    g = run(g, { type: 'select', cell: 0 }, { type: 'input', digit: solutionAt(g, 0), now: 1 });
+    // Rad 0 och box 0 har cell 1 tom; bara kolumn 0 är klar.
+    expect(completedUnitCells(g, 0).sort((a, b) => a - b)).toEqual([
+      0, 9, 18, 27, 36, 45, 54, 63, 72,
+    ]);
   });
 });

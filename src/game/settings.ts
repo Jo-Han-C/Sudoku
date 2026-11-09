@@ -17,6 +17,8 @@ export interface Settings {
   haptics: boolean;
   /** Fyll i resten automatiskt när pusslet nästan är klart. */
   autoComplete: boolean;
+  /** Håll skärmen tänd medan ett spel pågår. */
+  keepScreenOn: boolean;
   lastDifficulty: Difficulty;
 }
 
@@ -30,6 +32,7 @@ export const DEFAULT_SETTINGS: Settings = {
   showTimer: true,
   haptics: true,
   autoComplete: true,
+  keepScreenOn: true,
   lastDifficulty: 'easy',
 };
 

@@ -1,4 +1,4 @@
-import { ALL_DIGITS, PEERS, bit, popcount } from '../engine/board';
+import { ALL_DIGITS, PEERS, UNITS, bit, popcount } from '../engine/board';
 import type { GameState } from './types';
 
 export const solutionAt = (g: GameState, i: number): number => g.solution.charCodeAt(i) - 48;
@@ -63,4 +63,14 @@ export function canAutoComplete(g: GameState): boolean {
     if (popcount(ALL_DIGITS & ~used) !== 1) return false;
   }
   return empty > 0;
+}
+
+/** Celler i de rader, kolumner och boxar genom `cell` som är helt och korrekt ifyllda. */
+export function completedUnitCells(g: GameState, cell: number): number[] {
+  const out = new Set<number>();
+  for (const unit of UNITS) {
+    if (!unit.includes(cell)) continue;
+    if (unit.every((i) => isLocked(g, i))) for (const i of unit) out.add(i);
+  }
+  return [...out];
 }
