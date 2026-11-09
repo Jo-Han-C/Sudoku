@@ -4,7 +4,11 @@
 - Plattform: webbapp (PWA) som installeras på hemskärmen och fungerar offline.
 - Layout: som i förlagan, men utan favorit, dela, tema, poäng, snabbpenna och ledtråd.
 - Avbryta spel: **pausa och återuppta**, samt **ge upp** (räknas som förlust).
-- Nytt spel med val av svårighetsgrad, och statistik per svårighetsgrad.
+- Nytt spel med val av svårighetsgrad (fem nivåer: Lätt, Medel, Svår, Expert, Mästare), och statistik per svårighetsgrad.
+- "Vinstrad N" i titeln gäller den svårighetsgrad som spelas.
+- Nytt spel mitt i ett pågående räknas som uppgivet om minst ett drag gjorts.
+- Blixtknappen är en switch för autokomplettering när pusslet nästan är klart (se avsnitt 5).
+- Repot byter namn från "Soduko" till "Sudoku" före första driftsättningen.
 
 ---
 
@@ -28,7 +32,7 @@ Inga beroenden för analys, reklam eller inloggning, och inga externa nätverksa
 
 ```
 index.html
-vite.config.ts            // base: '/Soduko/', PWA-konfig
+vite.config.ts            // base: '/Sudoku/', PWA-konfig
 public/                   // ikoner (192, 512, maskable), favicon
 scripts/
   generate-bank.ts        // genererar och graderar pussel, skriver src/data/*.txt
@@ -43,7 +47,7 @@ src/
     grader.ts             // logisk lösare med mänskliga tekniker
     transform.ts          // permutationer som bevarar svårigheten
   puzzles/bank.ts         // laddar bank per nivå, slumpar och transformerar
-  data/easy.txt … expert.txt
+  data/easy.txt … master.txt
   game/                   // types, reducer, selectors, timer
   stats/stats.ts
   storage/storage.ts      // nycklar, schemaversion, migreringar
@@ -73,6 +77,7 @@ tests/unit/…  tests/e2e/…
 | Medel | + pairs, pointing pairs, box/line | 30–35 |
 | Svår | + triples | 26–31 |
 | Expert | + X-wing, Swordfish, XY-wing | 22–27 |
+| Mästare | + kedjor/coloring, eller kräver mer än teknikerna ovan men har ändå unik lösning | ≤ 26 |
 
   4. Spara cirka 300 pussel per nivå (ungefär 10 kB gzip per nivå).
 - **När ett spel startas:** välj ett pussel som inte spelats nyligen och transformera det (byt siffror, rader inom band, kolumner inom stackar, band, stackar, transponera). Det ger miljarder varianter med samma svårighet.
@@ -82,7 +87,7 @@ tests/unit/…  tests/e2e/…
 ## 4. Datamodell
 
 ```ts
-type Difficulty = 'easy' | 'medium' | 'hard' | 'expert';
+type Difficulty = 'easy' | 'medium' | 'hard' | 'expert' | 'master';
 
 interface Move {              // en åtgärd som ångras som en helhet
   cell: number;
@@ -123,6 +128,7 @@ interface Settings {
   showTimer: boolean;
   haptics: boolean;
   keepScreenOn: boolean;
+  autoComplete: boolean;        // blixtknappen (standard: på)
   lastDifficulty: Difficulty;
 }
 ```
@@ -146,6 +152,7 @@ interface Settings {
 - **Paus:** pausknappen, eller att appen göms, stoppar timern och döljer brädet ("Pausad" med Fortsätt och Ge upp). Bakåtpilen sparar och pausar. Spelet öppnas pausat nästa gång.
 - **Timer:** räknar bara aktiv speltid. Tid när appen är stängd räknas aldrig.
 - **Ge upp** (från pausläget, efter bekräftelse): räknas som förlust och nollställer vinstraden. Lösningen visas.
+- **Autokomplettering (blixtknappen):** en switch ovanför åtgärdsraden, och samma val i Inställningar. När den är på och alla kvarvarande tomma celler går att fylla i med enkla "singles" (en cell med bara en möjlig siffra), fyller appen i resten automatiskt med en kort animation. Timern stannar i det ögonblicket och spelet räknas som vunnet som vanligt. Autokompletteringen kan aldrig ge misstag.
 - **Nytt spel när ett pågår:** bekräftelsedialog. Har minst ett drag gjorts räknas det pågående spelet som uppgivet, annars påverkas inte statistiken.
 
 ---
@@ -154,7 +161,7 @@ interface Settings {
 
 **Start**
 - "Fortsätt" om ett sparat spel finns (nivå, tid, progress).
-- "Nytt spel" öppnar ett val av Lätt, Medel, Svår och Expert. Senast vald nivå är förvald.
+- "Nytt spel" öppnar ett val av Lätt, Medel, Svår, Expert och Mästare. Senast vald nivå är förvald.
 - Länkar till Statistik och Inställningar.
 
 **Spel**, uppifrån och ned:
@@ -165,8 +172,9 @@ interface Settings {
    - Givna siffror ljusgrå, egna blå, fel röda.
    - Vald cell starkt markerad, dess rad, kolumn och box svagt markerade.
    - Celler med samma siffra fylls i blått.
-4. **Åtgärdsrad:** Ångra · Radera · Penna (PÅ/AV).
-5. **Sifferfält 1–9:** antal kvar under varje siffra. Färdiga siffror gråas ut eller döljs.
+4. **Blixtswitch** (autokomplettering) till höger ovanför åtgärdsraden.
+5. **Åtgärdsrad:** Ångra · Radera · Penna (PÅ/AV).
+6. **Sifferfält 1–9:** antal kvar under varje siffra. Färdiga siffror gråas ut eller döljs.
 
 På desktop fungerar tangentbordet: 1–9, piltangenter, Backspace, N för penna och Ctrl+Z.
 
@@ -210,6 +218,7 @@ På desktop fungerar tangentbordet: 1–9, piltangenter, Backspace, N för penna
 - Transformationer: bevarar giltighet och svårighet.
 - Bankintegritet: alla pussel i banken är unika, har unik lösning och ligger på rätt nivå.
 - Spellogik: misstag och förlust, låsning, ångra, radera, penna och vinst.
+- Autokomplettering: startar bara när resten går att lösa med singles, fyller i rätt och räknas som vinst.
 - Statistik: vinst, förlust och ge upp; vinstrad; bästa tid och snitt.
 - Timer, samt lagring (migrering och korrupt data).
 
@@ -225,7 +234,7 @@ På desktop fungerar tangentbordet: 1–9, piltangenter, Backspace, N för penna
 - `ci.yml` (push och PR): lint → typecheck → vitest → build → Playwright.
 - `deploy.yml` (push till `main`): build och publicering till GitHub Pages.
   - Pages-källan måste sättas till "GitHub Actions" i repo-inställningarna.
-  - Adress: `https://jo-han-c.github.io/Soduko/`.
+  - Adress: `https://jo-han-c.github.io/Sudoku/`.
 
 ---
 
@@ -236,7 +245,7 @@ På desktop fungerar tangentbordet: 1–9, piltangenter, Backspace, N för penna
 - Klart när: en tom sida öppnas på mobilen via Pages-adressen.
 
 **Fas 1: Motor**
-- Bygg: lösare, generator, gradering, transformationer och pusselbank (Lätt till Expert).
+- Bygg: lösare, generator, gradering, transformationer och pusselbank för alla fem nivåer.
 - Klart när: alla motortester passerar och ett nytt pussel väljs på under 50 ms.
 
 **Fas 2: Spelbar MVP**
@@ -246,8 +255,8 @@ På desktop fungerar tangentbordet: 1–9, piltangenter, Backspace, N för penna
   - Spelet kan stängas och återupptas oförändrat.
   - 3 misstag ger förlust.
 
-**Fas 3: Statistik, Ge upp och Inställningar**
-- Bygg: statistikskärm per nivå och totalt, Ge upp, "Vinstrad N" och inställningsskärm.
+**Fas 3: Statistik, Ge upp, Inställningar och autokomplettering**
+- Bygg: statistikskärm per nivå och totalt, Ge upp, "Vinstrad N", inställningsskärm och blixtswitchen för autokomplettering.
 - Klart när: statistiken stämmer i alla scenarier och inställningarna sparas.
 
 **Fas 4: PWA och offline**
@@ -258,14 +267,10 @@ På desktop fungerar tangentbordet: 1–9, piltangenter, Backspace, N för penna
   - Uppdateringar tappar inte spelet.
 
 **Fas 5: Extra (valfritt)**
-- Bygg: blixtläge (snabbinmatning, välj siffra först), Mästare-nivå, vibration, skärmen-på-läge och animationer.
+- Bygg: vibration, skärmen-på-läge, animationer och kortkommandon.
 
 ---
 
-## 11. Öppna frågor
+## 11. Förberedelse
 
-1. **Vinstrad i titeln:** ska den gälla vald svårighetsgrad (förslag) eller alla nivåer?
-2. **Repo-namnet "Soduko":** adressen blir `…/Soduko/`. Ska repot byta namn till "Sudoku" innan första driftsättningen?
-3. **Nytt spel mitt i ett pågående:** okej att det räknas som uppgivet om minst ett drag gjorts?
-4. **Mästare-nivå:** önskas, eller räcker fyra nivåer?
-5. **Blixtknappen:** betyder den "välj siffra först och tryck sedan på celler"?
+- Byt namn på repot till **Sudoku** i GitHub (Settings → General → Repository name). GitHub omdirigerar den gamla adressen, så befintliga kloner fortsätter fungera.
