@@ -52,6 +52,12 @@ function setStats(s: Stats): void {
   saveStats(kv, s);
 }
 
+/** Pausar och sparar spelet, t.ex. innan appen laddas om för en uppdatering. */
+export function prepareForReload(): void {
+  dispatch({ type: 'pause' });
+  persistGame(game.value);
+}
+
 export function resetStats(): void {
   setStats(emptyStats());
 }
