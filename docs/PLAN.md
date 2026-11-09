@@ -1,6 +1,7 @@
 # Implementationsplan: reklamfri Sudoku-PWA
 
 **Beslut hittills**
+
 - Plattform: webbapp (PWA) som installeras på hemskärmen och fungerar offline.
 - Layout: som i förlagan, men utan favorit, dela, tema, poäng, snabbpenna och ledtråd.
 - Avbryta spel: **pausa och återuppta**, samt **ge upp** (räknas som förlust).
@@ -14,15 +15,15 @@
 
 ## 1. Teknikval
 
-| Del | Val | Varför |
-|---|---|---|
-| Byggverktyg | **Vite + TypeScript (strict)** | Snabb dev-server och liten build. Har bra stöd för PWA och Vitest. |
-| UI | **Preact + @preact/signals** | Cirka 5 kB. Komponenter för bräde, sifferfält och skärmar. Signals gör att bara de celler som ändras ritas om. |
-| PWA | **vite-plugin-pwa** (Workbox) | Ger manifest, precache och uppdateringsflöde. |
-| Routing | En `screen`-signal plus `history.pushState` | Androids bakåtgest fungerar. |
-| Lagring | **localStorage** med versionerade nycklar | Liten datamängd. `navigator.storage.persist()` minskar risken att datan rensas. |
-| Test | **Vitest** (enhet), **Playwright** (smoke och offline) | |
-| Kvalitet | ESLint + Prettier + `tsc --noEmit` i CI | |
+| Del         | Val                                                    | Varför                                                                                                         |
+| ----------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| Byggverktyg | **Vite + TypeScript (strict)**                         | Snabb dev-server och liten build. Har bra stöd för PWA och Vitest.                                             |
+| UI          | **Preact + @preact/signals**                           | Cirka 5 kB. Komponenter för bräde, sifferfält och skärmar. Signals gör att bara de celler som ändras ritas om. |
+| PWA         | **vite-plugin-pwa** (Workbox)                          | Ger manifest, precache och uppdateringsflöde.                                                                  |
+| Routing     | En `screen`-signal plus `history.pushState`            | Androids bakåtgest fungerar.                                                                                   |
+| Lagring     | **localStorage** med versionerade nycklar              | Liten datamängd. `navigator.storage.persist()` minskar risken att datan rensas.                                |
+| Test        | **Vitest** (enhet), **Playwright** (smoke och offline) |                                                                                                                |
+| Kvalitet    | ESLint + Prettier + `tsc --noEmit` i CI                |                                                                                                                |
 
 Inga beroenden för analys, reklam eller inloggning, och inga externa nätverksanrop.
 
@@ -71,15 +72,16 @@ tests/unit/…  tests/e2e/…
   2. Ta bort ledtrådar, gärna symmetriskt. Efter varje borttagning kontrolleras att pusslet fortfarande har exakt en lösning.
   3. Gradera pusslet med en lösare som bara använder mänskliga tekniker. Nivån bestäms av den svåraste teknik som behövs.
 
-| Nivå | Tekniker som krävs | Ledtrådar (ungefär) |
-|---|---|---|
-| Lätt | Naked och hidden singles | 36–45 |
-| Medel | + pairs, pointing pairs, box/line | 30–35 |
-| Svår | + triples | 26–31 |
-| Expert | + X-wing, Swordfish, XY-wing | 22–27 |
-| Mästare | + kedjor/coloring, eller kräver mer än teknikerna ovan men har ändå unik lösning | ≤ 26 |
+| Nivå    | Tekniker som krävs                                                               | Ledtrådar (ungefär) |
+| ------- | -------------------------------------------------------------------------------- | ------------------- |
+| Lätt    | Naked och hidden singles                                                         | 36–45               |
+| Medel   | + pairs, pointing pairs, box/line                                                | 30–35               |
+| Svår    | + triples                                                                        | 26–31               |
+| Expert  | + X-wing, Swordfish, XY-wing                                                     | 22–27               |
+| Mästare | + kedjor/coloring, eller kräver mer än teknikerna ovan men har ändå unik lösning | ≤ 26                |
 
-  4. Spara cirka 300 pussel per nivå (ungefär 10 kB gzip per nivå).
+4. Spara cirka 300 pussel per nivå (ungefär 10 kB gzip per nivå).
+
 - **När ett spel startas:** välj ett pussel som inte spelats nyligen och transformera det (byt siffror, rader inom band, kolumner inom stackar, band, stackar, transponera). Det ger miljarder varianter med samma svårighet.
 
 ---
@@ -89,37 +91,49 @@ tests/unit/…  tests/e2e/…
 ```ts
 type Difficulty = 'easy' | 'medium' | 'hard' | 'expert' | 'master';
 
-interface Move {              // en åtgärd som ångras som en helhet
+interface Move {
+  // en åtgärd som ångras som en helhet
   cell: number;
-  prev: { value: number; notes: number };   // notes = 9-bitars mask
+  prev: { value: number; notes: number }; // notes = 9-bitars mask
   next: { value: number; notes: number };
   peerNotesCleared?: { cell: number; notes: number }[];
 }
 
 interface GameState {
   v: 1;
-  id: string; difficulty: Difficulty; puzzleId: string;
-  givens: string; solution: string;         // 81 tecken
-  values: number[]; notes: number[];
+  id: string;
+  difficulty: Difficulty;
+  puzzleId: string;
+  givens: string;
+  solution: string; // 81 tecken
+  values: number[];
+  notes: number[];
   mistakes: number;
   elapsedMs: number;
   status: 'playing' | 'paused' | 'won' | 'lost';
   history: Move[];
-  countedAsStarted: boolean;                // sätts vid första draget
-  selected: number | null; pencil: boolean;
-  createdAt: number; endedAt?: number;
+  countedAsStarted: boolean; // sätts vid första draget
+  selected: number | null;
+  pencil: boolean;
+  createdAt: number;
+  endedAt?: number;
 }
 
 interface DifficultyStats {
-  started: number; won: number; lost: number; givenUp: number;
+  started: number;
+  won: number;
+  lost: number;
+  givenUp: number;
   wonNoMistakes: number;
-  bestTimeMs: number | null; totalWonTimeMs: number;
-  currentStreak: number; bestStreak: number;
+  bestTimeMs: number | null;
+  totalWonTimeMs: number;
+  currentStreak: number;
+  bestStreak: number;
 }
 
 interface Settings {
   v: 1;
-  mistakeLimit: boolean;        // 3 misstag = förlust (standard: på)
+  mistakeLimit: boolean; // 3 misstag = förlust (standard: på)
   highlightPeers: boolean;
   highlightSameDigit: boolean;
   highlightConflicts: boolean;
@@ -128,7 +142,7 @@ interface Settings {
   showTimer: boolean;
   haptics: boolean;
   keepScreenOn: boolean;
-  autoComplete: boolean;        // blixtknappen (standard: på)
+  autoComplete: boolean; // blixtknappen (standard: på)
   lastDifficulty: Difficulty;
 }
 ```
@@ -160,11 +174,13 @@ interface Settings {
 ## 6. Skärmar och layout (mörkt tema, porträtt)
 
 **Start**
+
 - "Fortsätt" om ett sparat spel finns (nivå, tid, progress).
 - "Nytt spel" öppnar ett val av Lätt, Medel, Svår, Expert och Mästare. Senast vald nivå är förvald.
 - Länkar till Statistik och Inställningar.
 
 **Spel**, uppifrån och ned:
+
 1. **Toppfält:** bakåtpil och "Vinstrad N" till vänster, kugghjul till höger.
 2. **Inforad:** `39/59` · `Misstag: 1/3` · `Expert` · `23:35` med pausknapp.
 3. **Bräde 9×9:**
@@ -179,6 +195,7 @@ interface Settings {
 På desktop fungerar tangentbordet: 1–9, piltangenter, Backspace, N för penna och Ctrl+Z.
 
 **Statistik:** flikar per nivå plus "Totalt". Varje flik visar:
+
 - Startade och vunna spel, vinstprocent
 - Bästa tid och snittid
 - Nuvarande och bästa vinstrad
@@ -188,16 +205,16 @@ På desktop fungerar tangentbordet: 1–9, piltangenter, Backspace, N för penna
 
 **Färger (ungefärliga):**
 
-| Användning | Färg |
-|---|---|
-| Bakgrund | `#17181c` |
-| Cell | `#1f2127` |
+| Användning     | Färg      |
+| -------------- | --------- |
+| Bakgrund       | `#17181c` |
+| Cell           | `#1f2127` |
 | Peer-markering | `#2a2e38` |
-| Samma siffra | `#2c4a80` |
-| Vald cell | `#3b5a99` |
-| Given siffra | `#d6d6d6` |
-| Egen siffra | `#6ea0ff` |
-| Fel | `#ff5c5c` |
+| Samma siffra   | `#2c4a80` |
+| Vald cell      | `#3b5a99` |
+| Given siffra   | `#d6d6d6` |
+| Egen siffra    | `#6ea0ff` |
+| Fel            | `#ff5c5c` |
 
 ---
 
@@ -212,6 +229,7 @@ På desktop fungerar tangentbordet: 1–9, piltangenter, Backspace, N för penna
 ## 8. Test
 
 **Enhetstester (Vitest)**
+
 - Lösare: löser kända pussel och räknar antal lösningar rätt.
 - Generator: unik lösning.
 - Gradering: kända referenspussel klassas rätt.
@@ -223,6 +241,7 @@ På desktop fungerar tangentbordet: 1–9, piltangenter, Backspace, N för penna
 - Timer, samt lagring (migrering och korrupt data).
 
 **E2E (Playwright)**
+
 - Smoke: spela klart ett nästan löst testpussel och kontrollera statistiken.
 - Paus och omladdning: spelet återupptas med samma tid och bräde.
 - Offline: appen laddas och ett nytt spel kan startas utan nätverk.
@@ -241,14 +260,17 @@ På desktop fungerar tangentbordet: 1–9, piltangenter, Backspace, N för penna
 ## 10. Milstolpar
 
 **Fas 0: Grund**
+
 - Bygg: projektskelett, lint, test, CI och deploy.
 - Klart när: en tom sida öppnas på mobilen via Pages-adressen.
 
 **Fas 1: Motor**
+
 - Bygg: lösare, generator, gradering, transformationer och pusselbank för alla fem nivåer.
 - Klart när: alla motortester passerar och ett nytt pussel väljs på under 50 ms.
 
 **Fas 2: Spelbar MVP**
+
 - Bygg: spelskärm med hela layouten, inmatning, penna, ångra, radera, misstag, vinst, timer, paus och sparning, samt startskärm med Fortsätt och Nytt spel.
 - Klart när:
   - Ett pussel kan spelas klart på Android.
@@ -256,10 +278,12 @@ På desktop fungerar tangentbordet: 1–9, piltangenter, Backspace, N för penna
   - 3 misstag ger förlust.
 
 **Fas 3: Statistik, Ge upp, Inställningar och autokomplettering**
+
 - Bygg: statistikskärm per nivå och totalt, Ge upp, "Vinstrad N", inställningsskärm och blixtswitchen för autokomplettering.
 - Klart när: statistiken stämmer i alla scenarier och inställningarna sparas.
 
 **Fas 4: PWA och offline**
+
 - Bygg: manifest, ikoner, service worker och uppdaterings-toast.
 - Klart när:
   - Appen kan installeras på hemskärmen.
@@ -267,6 +291,7 @@ På desktop fungerar tangentbordet: 1–9, piltangenter, Backspace, N för penna
   - Uppdateringar tappar inte spelet.
 
 **Fas 5: Extra (valfritt)**
+
 - Bygg: vibration, skärmen-på-läge, animationer och kortkommandon.
 
 ---

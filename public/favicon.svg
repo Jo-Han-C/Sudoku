@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="12" fill="#17181c"/>
+  <g stroke="#3a3f4b" stroke-width="2">
+    <path d="M24 10v44M40 10v44M10 24h44M10 40h44"/>
+  </g>
+  <rect x="10" y="10" width="44" height="44" fill="none" stroke="#8a90a0" stroke-width="3" rx="2"/>
+  <text x="32" y="41" font-family="system-ui, sans-serif" font-size="22" font-weight="600"
+        text-anchor="middle" fill="#6ea0ff">9</text>
+</svg>

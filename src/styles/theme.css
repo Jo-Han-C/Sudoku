@@ -1,0 +1,16 @@
+:root {
+  --bg: #17181c;
+  --surface: #1f2127;
+  --cell: #1f2127;
+  --cell-peer: #2a2e38;
+  --cell-same: #2c4a80;
+  --cell-selected: #3b5a99;
+  --line: #3a3f4b;
+  --line-strong: #8a90a0;
+  --text: #e6e6e6;
+  --text-muted: #9aa0ac;
+  --digit-given: #d6d6d6;
+  --digit-user: #6ea0ff;
+  --digit-error: #ff5c5c;
+  --accent: #4f8cff;
+}
