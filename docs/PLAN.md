@@ -72,15 +72,17 @@ tests/unit/…  tests/e2e/…
   2. Ta bort ledtrådar, gärna symmetriskt. Efter varje borttagning kontrolleras att pusslet fortfarande har exakt en lösning.
   3. Gradera pusslet med en lösare som bara använder mänskliga tekniker. Nivån bestäms av den svåraste teknik som behövs.
 
-| Nivå    | Tekniker som krävs                                                               | Ledtrådar (ungefär) |
-| ------- | -------------------------------------------------------------------------------- | ------------------- |
-| Lätt    | Naked och hidden singles                                                         | 36–45               |
-| Medel   | + pairs, pointing pairs, box/line                                                | 30–35               |
-| Svår    | + triples                                                                        | 26–31               |
-| Expert  | + X-wing, Swordfish, XY-wing                                                     | 22–27               |
-| Mästare | + kedjor/coloring, eller kräver mer än teknikerna ovan men har ändå unik lösning | ≤ 26                |
+| Nivå    | Svåraste teknik som krävs                                               | Ledtrådar |
+| ------- | ----------------------------------------------------------------------- | --------- |
+| Lätt    | Singles                                                                 | 36–45     |
+| Medel   | Singles, men glesare bräde                                              | 27–34     |
+| Svår    | Pointing, box/line, par eller trippelgrupper                            | 24–32     |
+| Expert  | X-wing, Swordfish eller XY-wing                                         | 22–30     |
+| Mästare | Kvadrupler, Jellyfish, XYZ-wing eller färgning (alltid logiskt lösbart) | 21–30     |
 
-4. Spara cirka 300 pussel per nivå (ungefär 10 kB gzip per nivå).
+Trippelgrupper behövs nästan aldrig ensamma i praktiken, så Svår omfattar även pointing och par. Medel skiljer sig från Lätt genom färre ledtrådar, vilket gör singles svårare att hitta. Definitionerna finns i `src/engine/difficulty.ts`.
+
+4. Spara 300 pussel per nivå (cirka 44 kB gzip totalt). Banken byggs med `npx tsx scripts/generate-bank.ts` på ungefär 10 sekunder.
 
 - **När ett spel startas:** välj ett pussel som inte spelats nyligen och transformera det (byt siffror, rader inom band, kolumner inom stackar, band, stackar, transponera). Det ger miljarder varianter med samma svårighet.
 
