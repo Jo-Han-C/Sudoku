@@ -1,16 +1,20 @@
 :root {
-  --bg: #17181c;
-  --surface: #1f2127;
-  --cell: #1f2127;
-  --cell-peer: #2a2e38;
-  --cell-same: #2c4a80;
-  --cell-selected: #3b5a99;
-  --line: #3a3f4b;
-  --line-strong: #8a90a0;
-  --text: #e6e6e6;
+  --bg: #16171b;
+  --surface: #22242b;
+  --surface-2: #2b2e37;
+  --cell: #1c1d22;
+  --cell-peer: #282b34;
+  --cell-same: #24467f;
+  --cell-selected: #2f5aa3;
+  --line: #3a3e49;
+  --line-strong: #8a909e;
+  --text: #e6e7ea;
   --text-muted: #9aa0ac;
-  --digit-given: #d6d6d6;
+  --digit-given: #d9d9dc;
   --digit-user: #6ea0ff;
-  --digit-error: #ff5c5c;
+  --digit-error: #ff6464;
   --accent: #4f8cff;
+  --accent-text: #ffffff;
+  --scrim: rgb(0 0 0 / 0.6);
+  color-scheme: dark;
 }

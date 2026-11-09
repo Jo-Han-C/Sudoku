@@ -1,8 +1,7 @@
+import { GameScreen } from './screens/Game';
+import { HomeScreen } from './screens/Home';
+import { screen } from './state/store';
+
 export function App() {
-  return (
-    <main class="home">
-      <h1>Sudoku</h1>
-      <p>Reklamfri Sudoku – under uppbyggnad.</p>
-    </main>
-  );
+  return screen.value === 'game' ? <GameScreen /> : <HomeScreen />;
 }

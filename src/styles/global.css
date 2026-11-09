@@ -19,9 +19,28 @@ body {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
   user-select: none;
+  overscroll-behavior: none;
 }
 
 #app {
   min-height: 100dvh;
-  padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom);
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: default;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
