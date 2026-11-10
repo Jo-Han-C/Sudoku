@@ -13,8 +13,8 @@ const ROWS: { key: BoolKey; label: string; desc: string }[] = [
   { key: 'mistakeLimit', label: 'Misstagsgräns', desc: 'Tre misstag avslutar spelet' },
   {
     key: 'autoComplete',
-    label: 'Autokomplettering',
-    desc: 'Fyll i resten när varje tom cell bara har en möjlig siffra',
+    label: 'Autofyll',
+    desc: 'Erbjud att fylla i resten när högst 10 celler är tomma och bara enkla steg återstår',
   },
   {
     key: 'autoRemoveNotes',

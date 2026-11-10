@@ -83,7 +83,6 @@ export function resetStats(): void {
 export function updateSettings(patch: Partial<Settings>): void {
   settings.value = { ...settings.value, ...patch };
   saveSettings(kv, settings.value);
-  if (patch.autoComplete) maybeAutoComplete();
 }
 
 function vibrate(ms: number): void {
@@ -100,7 +99,8 @@ type ActionWithoutTime =
   | { type: 'pause' }
   | { type: 'resume' }
   | { type: 'giveUp' }
-  | { type: 'autoComplete' };
+  | { type: 'autoComplete' }
+  | { type: 'declineAutoComplete' };
 
 export function dispatch(action: ActionWithoutTime): void {
   const g = game.value;
@@ -137,14 +137,19 @@ export function dispatch(action: ActionWithoutTime): void {
       );
     else if (isLocked(next, cell)) startFlash(completedUnitCells(next, cell), cell);
   }
-  maybeAutoComplete();
 }
 
-/** Blixtknappen: fyll i resten när varje tom cell bara har en möjlig siffra. */
-function maybeAutoComplete(): void {
+/** Visar frågan om autofyll när pusslet nästan är klart och spelaren inte tackat nej. */
+export const autoCompleteOffer = computed(() => {
   const g = game.value;
-  if (g && settings.value.autoComplete && canAutoComplete(g)) dispatch({ type: 'autoComplete' });
-}
+  return (
+    screen.value === 'game' &&
+    !!g &&
+    settings.value.autoComplete &&
+    !g.autoCompleteDeclined &&
+    canAutoComplete(g)
+  );
+});
 
 /** Avslutar ett pågående spel; har det startats räknas det som uppgivet. */
 function abandonCurrentGame(): void {
