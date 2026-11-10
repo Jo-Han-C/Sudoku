@@ -18,7 +18,8 @@ export type Action =
   | { type: 'pause'; now: number }
   | { type: 'resume'; now: number }
   | { type: 'giveUp'; now: number }
-  | { type: 'autoComplete'; now: number };
+  | { type: 'autoComplete'; now: number }
+  | { type: 'declineAutoComplete' };
 
 const newId = (): string =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
@@ -203,5 +204,7 @@ export function reduce(g: GameState, action: Action, opts: RuleOptions): GameSta
       return undo(g);
     case 'autoComplete':
       return autoComplete(g, action.now);
+    case 'declineAutoComplete':
+      return g.autoCompleteDeclined ? g : { ...g, autoCompleteDeclined: true };
   }
 }

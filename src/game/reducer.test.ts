@@ -224,10 +224,18 @@ describe('autokomplettering', () => {
     expect(canAutoComplete(g)).toBe(false);
   });
 
-  it('körs inte när två tomma celler i samma enhet kan byta siffror', () => {
-    // Hela rad 0 tom: varje cell har nio möjliga siffror i raden men begränsas av kolumn och box.
-    const g = createGame(nearlySolved([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]), 0);
-    expect(canAutoComplete(g)).toBe(false);
+  it('körs när resten kräver gömda singlar men inte när för många celler är tomma', () => {
+    // Tre tomma celler i samma rad: ingen kolumn eller box tvingar fram siffran direkt
+    // för alla, men singles räcker.
+    const g = createGame(nearlySolved([0, 1, 2, 9, 10, 11]), 0);
+    expect(canAutoComplete(g)).toBe(true);
+    const many = createGame(nearlySolved([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]), 0);
+    expect(canAutoComplete(many)).toBe(false);
+  });
+
+  it('kommer ihåg att spelaren tackat nej', () => {
+    const g = run(createGame(nearlySolved([0, 40]), 0), { type: 'declineAutoComplete' });
+    expect(g.autoCompleteDeclined).toBe(true);
   });
 });
 

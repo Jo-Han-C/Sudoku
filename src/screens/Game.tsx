@@ -7,6 +7,7 @@ import { DIFFICULTY_LABEL } from '../engine/difficulty';
 import { formatTime } from '../game/selectors';
 import type { GameState } from '../game/types';
 import {
+  autoCompleteOffer,
   dispatch,
   game,
   goBack,
@@ -160,6 +161,24 @@ export function GameScreen() {
       <ActionBar game={g} />
       <NumberPad game={g} />
       {ended && <EndDialog key={`${g.id}-${g.status}`} game={g} />}
+      {autoCompleteOffer.value && (
+        <Dialog
+          title="Fyll i resten automatiskt?"
+          buttons={[
+            {
+              label: 'Nej, jag fyller i själv',
+              onClick: () => dispatch({ type: 'declineAutoComplete' }),
+            },
+            {
+              label: 'Ja, fyll i',
+              primary: true,
+              onClick: () => dispatch({ type: 'autoComplete' }),
+            },
+          ]}
+        >
+          Resten av pusslet går att lösa med enkla steg. Tiden stoppas när siffrorna fylls i.
+        </Dialog>
+      )}
     </div>
   );
 }

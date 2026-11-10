@@ -8,7 +8,11 @@ test.beforeEach(async ({ page }) => {
 test('spelar ett lätt pussel till vinst och statistiken uppdateras', async ({ page }) => {
   const g = await startGame(page, 'Lätt');
   for (const i of emptyCells(g)) {
-    if ((await readGame(page)).status !== 'playing') break; // autokompletteringen tog resten
+    const offer = page.getByRole('dialog', { name: 'Fyll i resten automatiskt?' });
+    if (await offer.isVisible()) {
+      await offer.getByRole('button', { name: 'Ja, fyll i' }).click();
+      break;
+    }
     await enter(page, i, Number(g.solution[i]));
   }
   await expect(page.getByRole('dialog', { name: 'Snyggt löst!' })).toBeVisible();
@@ -70,4 +74,19 @@ test('ge upp visar lösningen och räknas som uppgivet', async ({ page }) => {
   await page.getByRole('button', { name: 'Statistik' }).click();
   await page.getByRole('tab', { name: 'Expert' }).click();
   await expect(page.locator('.tile', { hasText: 'Varav uppgivna' })).toContainText('1');
+});
+
+test('autofyll frågar först och frågar inte igen efter nej', async ({ page }) => {
+  const g = await startGame(page, 'Lätt');
+  const offer = page.getByRole('dialog', { name: 'Fyll i resten automatiskt?' });
+  const cells = emptyCells(g);
+  let k = 0;
+  while (!(await offer.isVisible())) {
+    await enter(page, cells[k]!, Number(g.solution[cells[k]!]));
+    k++;
+  }
+  await offer.getByRole('button', { name: 'Nej, jag fyller i själv' }).click();
+  await enter(page, cells[k]!, Number(g.solution[cells[k]!]));
+  await expect(offer).toBeHidden();
+  expect((await readGame(page)).status).toBe('playing');
 });

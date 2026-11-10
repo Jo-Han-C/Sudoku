@@ -1,4 +1,5 @@
-import { ALL_DIGITS, PEERS, UNITS, bit, popcount } from '../engine/board';
+import { UNITS, bit } from '../engine/board';
+import { grade } from '../engine/grader';
 import type { GameState } from './types';
 
 export const solutionAt = (g: GameState, i: number): number => g.solution.charCodeAt(i) - 48;
@@ -47,22 +48,22 @@ export function formatTime(ms: number): string {
   return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
 }
 
+/** Autofyll erbjuds först när högst så här många celler är tomma. */
+export const AUTO_COMPLETE_MAX_EMPTY = 10;
+
 /**
- * Sant när varje tom cell bara har en möjlig siffra och inga fel siffror finns på brädet.
- * Då kan resten fyllas i automatiskt (inställningen Autokomplettering).
+ * Sant när pusslet nästan är klart: högst AUTO_COMPLETE_MAX_EMPTY tomma celler,
+ * inga fel siffror, och resten går att lösa med bara singles (ensamma och gömda).
  */
 export function canAutoComplete(g: GameState): boolean {
   if (g.status !== 'playing') return false;
   let empty = 0;
   for (let i = 0; i < 81; i++) {
     if (isWrong(g, i)) return false;
-    if (g.values[i] !== 0) continue;
-    empty++;
-    let used = 0;
-    for (const p of PEERS[i]!) if (g.values[p]) used |= bit(g.values[p]!);
-    if (popcount(ALL_DIGITS & ~used) !== 1) return false;
+    if (g.values[i] === 0) empty++;
   }
-  return empty > 0;
+  if (empty === 0 || empty > AUTO_COMPLETE_MAX_EMPTY) return false;
+  return grade(g.values, 1).solved;
 }
 
 /** Celler i de rader, kolumner och boxar genom `cell` som är helt och korrekt ifyllda. */

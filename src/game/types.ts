@@ -48,6 +48,8 @@ export interface GameState {
   revealed?: number[];
   /** Celler som fylldes i av autokompletteringen, i ordning. */
   autoFilled?: number[];
+  /** Sant om spelaren tackat nej till autofyll i det här spelet. */
+  autoCompleteDeclined?: boolean;
 }
 
 export const MAX_MISTAKES = 3;
